@@ -1,2 +1,2 @@
 # Morning Paper
-      is a Telegram bot that saves your time that you spend reading the news.
+      is a Telegram bot that saves the time that you spend reading the news.
