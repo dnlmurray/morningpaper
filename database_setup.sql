@@ -36,7 +36,6 @@ CREATE TABLE public.news (
 	sources_id integer,
 	link varchar(100),
 	"timestamp" timestamp,
-	news_types_id integer,
 	topics_id integer,
 	CONSTRAINT news_pk PRIMARY KEY (id)
 
@@ -57,18 +56,6 @@ CREATE TABLE public.topics (
 ALTER TABLE public.topics OWNER TO postgres;
 -- ddl-end --
 
--- object: public.news_types | type: TABLE --
--- DROP TABLE IF EXISTS public.news_types CASCADE;
-CREATE TABLE public.news_types (
-	id serial NOT NULL,
-	type varchar(30) NOT NULL,
-	CONSTRAINT news_types_pk PRIMARY KEY (id)
-
-);
--- ddl-end --
-ALTER TABLE public.news_types OWNER TO postgres;
--- ddl-end --
-
 -- object: public.sources | type: TABLE --
 -- DROP TABLE IF EXISTS public.sources CASCADE;
 CREATE TABLE public.sources (
@@ -80,13 +67,6 @@ CREATE TABLE public.sources (
 );
 -- ddl-end --
 ALTER TABLE public.sources OWNER TO postgres;
--- ddl-end --
-
--- object: fk_news_types | type: CONSTRAINT --
--- ALTER TABLE public.news DROP CONSTRAINT IF EXISTS fk_news_types CASCADE;
-ALTER TABLE public.news ADD CONSTRAINT fk_news_types FOREIGN KEY (news_types_id)
-REFERENCES public.news_types (id) MATCH FULL
-ON DELETE SET NULL ON UPDATE CASCADE;
 -- ddl-end --
 
 -- object: fk_sources | type: CONSTRAINT --
@@ -124,6 +104,67 @@ ON DELETE RESTRICT ON UPDATE CASCADE;
 -- ALTER TABLE public.news DROP CONSTRAINT IF EXISTS fk_topics CASCADE;
 ALTER TABLE public.news ADD CONSTRAINT fk_topics FOREIGN KEY (topics_id)
 REFERENCES public.topics (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: public.weather | type: TABLE --
+-- DROP TABLE IF EXISTS public.weather CASCADE;
+CREATE TABLE public.weather (
+	id serial NOT NULL,
+	temperature real,
+	cloudiness smallint,
+	precipitation real,
+	"timestamp" timestamp,
+	locations_id integer,
+	CONSTRAINT weather_pk PRIMARY KEY (id)
+
+);
+-- ddl-end --
+ALTER TABLE public.weather OWNER TO postgres;
+-- ddl-end --
+
+-- object: public.locations | type: TABLE --
+-- DROP TABLE IF EXISTS public.locations CASCADE;
+CREATE TABLE public.locations (
+	id serial NOT NULL,
+	location varchar(30),
+	lat real NOT NULL,
+	lon real NOT NULL,
+	CONSTRAINT locations_pk PRIMARY KEY (id)
+
+);
+-- ddl-end --
+ALTER TABLE public.locations OWNER TO postgres;
+-- ddl-end --
+
+-- object: public.many_users_has_many_locations | type: TABLE --
+-- DROP TABLE IF EXISTS public.many_users_has_many_locations CASCADE;
+CREATE TABLE public.many_users_has_many_locations (
+	users_id integer NOT NULL,
+	locations_id integer NOT NULL,
+	CONSTRAINT pk_many_users_has_many_locations PRIMARY KEY (users_id,locations_id)
+
+);
+-- ddl-end --
+
+-- object: fk_users | type: CONSTRAINT --
+-- ALTER TABLE public.many_users_has_many_locations DROP CONSTRAINT IF EXISTS fk_users CASCADE;
+ALTER TABLE public.many_users_has_many_locations ADD CONSTRAINT fk_users FOREIGN KEY (users_id)
+REFERENCES public.users (id) MATCH FULL
+ON DELETE RESTRICT ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: fk_locations | type: CONSTRAINT --
+-- ALTER TABLE public.many_users_has_many_locations DROP CONSTRAINT IF EXISTS fk_locations CASCADE;
+ALTER TABLE public.many_users_has_many_locations ADD CONSTRAINT fk_locations FOREIGN KEY (locations_id)
+REFERENCES public.locations (id) MATCH FULL
+ON DELETE RESTRICT ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: fk_locations | type: CONSTRAINT --
+-- ALTER TABLE public.weather DROP CONSTRAINT IF EXISTS fk_locations CASCADE;
+ALTER TABLE public.weather ADD CONSTRAINT fk_locations FOREIGN KEY (locations_id)
+REFERENCES public.locations (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
 -- ddl-end --
 
