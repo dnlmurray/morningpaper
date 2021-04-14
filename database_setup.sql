@@ -152,8 +152,93 @@ REFERENCES public.locations (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
 -- ddl-end --
 
+-- object: public.currencies | type: TABLE --
+-- DROP TABLE IF EXISTS public.currencies CASCADE;
+CREATE TABLE public.currencies (
+	id serial NOT NULL,
+	name varchar(30),
+	abbreviation varchar(3),
+	CONSTRAINT currencies_pk PRIMARY KEY (id)
+
+);
+-- ddl-end --
+ALTER TABLE public.currencies OWNER TO postgres;
+-- ddl-end --
+
+-- object: public.exchange_rates | type: TABLE --
+-- DROP TABLE IF EXISTS public.exchange_rates CASCADE;
+CREATE TABLE public.exchange_rates (
+	id serial NOT NULL,
+	base integer,
+	target integer,
+	rate money,
+	CONSTRAINT exchange_rates_pk PRIMARY KEY (id)
+
+);
+-- ddl-end --
+ALTER TABLE public.exchange_rates OWNER TO postgres;
+-- ddl-end --
+
+-- object: currencies_fk | type: CONSTRAINT --
+-- ALTER TABLE public.exchange_rates DROP CONSTRAINT IF EXISTS currencies_fk CASCADE;
+ALTER TABLE public.exchange_rates ADD CONSTRAINT currencies_fk FOREIGN KEY (base)
+REFERENCES public.currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: currencies_fk1 | type: CONSTRAINT --
+-- ALTER TABLE public.exchange_rates DROP CONSTRAINT IF EXISTS currencies_fk1 CASCADE;
+ALTER TABLE public.exchange_rates ADD CONSTRAINT currencies_fk1 FOREIGN KEY (target)
+REFERENCES public.currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: public.users_currencies | type: TABLE --
+-- DROP TABLE IF EXISTS public.users_currencies CASCADE;
+CREATE TABLE public.users_currencies (
+	users_id integer,
+	base integer,
+	target_one integer,
+	target_two integer
+);
+-- ddl-end --
+ALTER TABLE public.users_currencies OWNER TO postgres;
+-- ddl-end --
+
+-- object: users_fk | type: CONSTRAINT --
+-- ALTER TABLE public.users_currencies DROP CONSTRAINT IF EXISTS users_fk CASCADE;
+ALTER TABLE public.users_currencies ADD CONSTRAINT users_fk FOREIGN KEY (users_id)
+REFERENCES public.users (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: users_currencies_uq | type: CONSTRAINT --
+-- ALTER TABLE public.users_currencies DROP CONSTRAINT IF EXISTS users_currencies_uq CASCADE;
+ALTER TABLE public.users_currencies ADD CONSTRAINT users_currencies_uq UNIQUE (users_id);
+-- ddl-end --
+
+-- object: currencies_fk | type: CONSTRAINT --
+-- ALTER TABLE public.users_currencies DROP CONSTRAINT IF EXISTS currencies_fk CASCADE;
+ALTER TABLE public.users_currencies ADD CONSTRAINT currencies_fk FOREIGN KEY (target_one)
+REFERENCES public.currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: currencies_fk1 | type: CONSTRAINT --
+-- ALTER TABLE public.users_currencies DROP CONSTRAINT IF EXISTS currencies_fk1 CASCADE;
+ALTER TABLE public.users_currencies ADD CONSTRAINT currencies_fk1 FOREIGN KEY (target_two)
+REFERENCES public.currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
+-- object: currencies_fk2 | type: CONSTRAINT --
+-- ALTER TABLE public.users_currencies DROP CONSTRAINT IF EXISTS currencies_fk2 CASCADE;
+ALTER TABLE public.users_currencies ADD CONSTRAINT currencies_fk2 FOREIGN KEY (base)
+REFERENCES public.currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+-- ddl-end --
+
 
 -- Appended SQL commands --
-INSERT INTO news_types (type) VALUES ('news'), ('weather'), ('currency'); 
 INSERT INTO topics (name) VALUES ('business'), ('entertainment'), ('general'), ('health'), ('science'), ('sports'), ('technology');
 -- ddl-end --
