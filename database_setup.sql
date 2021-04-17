@@ -96,6 +96,7 @@ CREATE TABLE exchange_rates (
 	base integer,
 	target integer,
 	rate money,
+	"timestamp" timestamp,
 	CONSTRAINT exchange_rates_pk PRIMARY KEY (id)
 );
 
