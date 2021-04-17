@@ -152,7 +152,8 @@ SELECT
        exchange_rates.id,
        base_currency.abbreviation as base,
        target_currency.abbreviation as target,
-       exchange_rates.rate
+       exchange_rates.rate,
+       exchange_rates.timestamp
 FROM exchange_rates
     JOIN currencies AS base_currency ON exchange_rates.base = base_currency.id
     JOIN currencies AS target_currency ON exchange_rates.target = target_currency.id;
