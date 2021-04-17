@@ -133,4 +133,10 @@ REFERENCES currencies (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
 
 
-INSERT INTO topics (name) VALUES ('business'), ('entertainment'), ('general'), ('health'), ('science'), ('sports'), ('technology');
+INSERT INTO topics (name) VALUES ('business'),
+                                 ('entertainment'),
+                                 ('general'),
+                                 ('health'),
+                                 ('science'),
+                                 ('sports'),
+                                 ('technology');
