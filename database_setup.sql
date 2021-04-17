@@ -132,6 +132,29 @@ ALTER TABLE users_currencies ADD CONSTRAINT currencies_fk2 FOREIGN KEY (base)
 REFERENCES currencies (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
 
+CREATE VIEW aggregated_news AS
+SELECT
+    news.id,
+    news.heading,
+    news.summary,
+    news.author,
+    sources.name AS source,
+    news.link,
+    news.timestamp,
+    topics.name AS topic
+FROM news
+    JOIN topics ON news.topics_id = topics.id
+    JOIN sources ON news.sources_id = sources.id;
+
+CREATE VIEW aggregated_exchange_rates AS
+SELECT
+       exchange_rates.id,
+       base_currency.abbreviation as base,
+       target_currency.abbreviation as target,
+       exchange_rates.rate
+FROM exchange_rates
+    JOIN currencies AS base_currency ON exchange_rates.base = base_currency.id
+    JOIN currencies AS target_currency ON exchange_rates.target = target_currency.id;
 
 INSERT INTO topics (name) VALUES ('business'),
                                  ('entertainment'),
