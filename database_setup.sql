@@ -8,8 +8,6 @@ CREATE TABLE users (
 	CONSTRAINT users_pk PRIMARY KEY (id)
 );
 
-ALTER TABLE users OWNER TO postgres;
-
 
 CREATE TABLE news (
 	id serial NOT NULL,
@@ -21,26 +19,20 @@ CREATE TABLE news (
 	"timestamp" timestamp,
 	topics_id integer,
 	CONSTRAINT news_pk PRIMARY KEY (id)
-
 );
-ALTER TABLE news OWNER TO postgres;
 
 CREATE TABLE topics (
 	id serial NOT NULL,
 	name varchar(30) NOT NULL,
 	CONSTRAINT topics_pk PRIMARY KEY (id)
-
 );
-ALTER TABLE topics OWNER TO postgres;
 
 CREATE TABLE sources (
 	id serial NOT NULL,
 	name varchar(30) NOT NULL,
 	link varchar(80),
 	CONSTRAINT sources_pk PRIMARY KEY (id)
-
 );
-ALTER TABLE sources OWNER TO postgres;
 
 ALTER TABLE news ADD CONSTRAINT fk_sources FOREIGN KEY (sources_id)
 REFERENCES sources (id) MATCH FULL
@@ -50,7 +42,6 @@ CREATE TABLE many_users_has_many_topics (
 	users_id integer NOT NULL,
 	id_topics integer NOT NULL,
 	CONSTRAINT many_users_has_many_topics_pk PRIMARY KEY (users_id,id_topics)
-
 );
 
 ALTER TABLE many_users_has_many_topics ADD CONSTRAINT fk_users FOREIGN KEY (users_id)
@@ -73,9 +64,7 @@ CREATE TABLE weather (
 	"timestamp" timestamp,
 	locations_id integer,
 	CONSTRAINT weather_pk PRIMARY KEY (id)
-
 );
-ALTER TABLE weather OWNER TO postgres;
 
 CREATE TABLE locations (
 	id serial NOT NULL,
@@ -83,9 +72,7 @@ CREATE TABLE locations (
 	lat real NOT NULL,
 	lon real NOT NULL,
 	CONSTRAINT locations_pk PRIMARY KEY (id)
-
 );
-ALTER TABLE locations OWNER TO postgres;
 
 ALTER TABLE weather ADD CONSTRAINT fk_locations FOREIGN KEY (locations_id)
 REFERENCES locations (id) MATCH FULL
@@ -100,9 +87,7 @@ CREATE TABLE currencies (
 	name varchar(30),
 	abbreviation varchar(3),
 	CONSTRAINT currencies_pk PRIMARY KEY (id)
-
 );
-ALTER TABLE currencies OWNER TO postgres;
 
 CREATE TABLE exchange_rates (
 	id serial NOT NULL,
@@ -110,9 +95,7 @@ CREATE TABLE exchange_rates (
 	target integer,
 	rate money,
 	CONSTRAINT exchange_rates_pk PRIMARY KEY (id)
-
 );
-ALTER TABLE exchange_rates OWNER TO postgres;
 
 ALTER TABLE exchange_rates ADD CONSTRAINT currencies_fk FOREIGN KEY (base)
 REFERENCES currencies (id) MATCH FULL
@@ -128,7 +111,6 @@ CREATE TABLE users_currencies (
 	target_one integer,
 	target_two integer
 );
-ALTER TABLE users_currencies OWNER TO postgres;
 
 ALTER TABLE users_currencies ADD CONSTRAINT users_fk FOREIGN KEY (users_id)
 REFERENCES users (id) MATCH FULL
