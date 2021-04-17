@@ -1,5 +1,7 @@
 CREATE DATABASE morningpaper;
 
+\connect morningpaper
+
 CREATE TABLE users (
 	id serial NOT NULL,
 	uid bigint NOT NULL,
