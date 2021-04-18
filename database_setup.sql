@@ -1,35 +1,17 @@
--- Database generated with pgModeler (PostgreSQL Database Modeler).
--- pgModeler  version: 0.9.3
--- PostgreSQL version: 13.0
--- Project Site: pgmodeler.io
--- Model Author: ---
+SELECT 'CREATE DATABASE morningpaper'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'morningpaper')\gexec
 
--- Database creation must be performed outside a multi lined SQL file. 
--- These commands were put in this file only as a convenience.
--- 
--- object: morningpaper | type: DATABASE --
--- DROP DATABASE IF EXISTS morningpaper;
-CREATE DATABASE morningpaper;
--- ddl-end --
+\connect morningpaper
 
-
--- object: public.users | type: TABLE --
--- DROP TABLE IF EXISTS public.users CASCADE;
-CREATE TABLE public.users (
+CREATE TABLE IF NOT EXISTS users (
 	id serial NOT NULL,
 	uid bigint NOT NULL,
 	preferred_time time,
 	locations_id integer,
 	CONSTRAINT users_pk PRIMARY KEY (id)
-
 );
--- ddl-end --
-ALTER TABLE public.users OWNER TO postgres;
--- ddl-end --
 
--- object: public.news | type: TABLE --
--- DROP TABLE IF EXISTS public.news CASCADE;
-CREATE TABLE public.news (
+CREATE TABLE IF NOT EXISTS news (
 	id serial NOT NULL,
 	heading varchar(280) NOT NULL,
 	summary varchar(1000),
@@ -39,78 +21,51 @@ CREATE TABLE public.news (
 	"timestamp" timestamp,
 	topics_id integer,
 	CONSTRAINT news_pk PRIMARY KEY (id)
-
 );
--- ddl-end --
-ALTER TABLE public.news OWNER TO postgres;
--- ddl-end --
 
--- object: public.topics | type: TABLE --
--- DROP TABLE IF EXISTS public.topics CASCADE;
-CREATE TABLE public.topics (
+CREATE TABLE IF NOT EXISTS topics (
 	id serial NOT NULL,
 	name varchar(30) NOT NULL,
 	CONSTRAINT topics_pk PRIMARY KEY (id)
-
 );
--- ddl-end --
-ALTER TABLE public.topics OWNER TO postgres;
--- ddl-end --
 
--- object: public.sources | type: TABLE --
--- DROP TABLE IF EXISTS public.sources CASCADE;
-CREATE TABLE public.sources (
+ALTER TABLE topics DROP CONSTRAINT IF EXISTS  unique_name;
+ALTER TABLE topics ADD CONSTRAINT unique_name UNIQUE (name);
+
+CREATE TABLE IF NOT EXISTS sources (
 	id serial NOT NULL,
 	name varchar(30) NOT NULL,
 	link varchar(80),
 	CONSTRAINT sources_pk PRIMARY KEY (id)
-
 );
--- ddl-end --
-ALTER TABLE public.sources OWNER TO postgres;
--- ddl-end --
 
--- object: fk_sources | type: CONSTRAINT --
--- ALTER TABLE public.news DROP CONSTRAINT IF EXISTS fk_sources CASCADE;
-ALTER TABLE public.news ADD CONSTRAINT fk_sources FOREIGN KEY (sources_id)
-REFERENCES public.sources (id) MATCH FULL
+ALTER TABLE news DROP CONSTRAINT IF EXISTS fk_sources;
+ALTER TABLE news ADD CONSTRAINT fk_sources FOREIGN KEY (sources_id)
+REFERENCES sources (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
--- ddl-end --
 
--- object: public.many_users_has_many_topics | type: TABLE --
--- DROP TABLE IF EXISTS public.many_users_has_many_topics CASCADE;
-CREATE TABLE public.many_users_has_many_topics (
+CREATE TABLE IF NOT EXISTS many_users_has_many_topics (
 	users_id integer NOT NULL,
 	id_topics integer NOT NULL,
 	CONSTRAINT many_users_has_many_topics_pk PRIMARY KEY (users_id,id_topics)
-
 );
--- ddl-end --
 
--- object: fk_users | type: CONSTRAINT --
--- ALTER TABLE public.many_users_has_many_topics DROP CONSTRAINT IF EXISTS fk_users CASCADE;
-ALTER TABLE public.many_users_has_many_topics ADD CONSTRAINT fk_users FOREIGN KEY (users_id)
-REFERENCES public.users (id) MATCH FULL
+ALTER TABLE many_users_has_many_topics DROP CONSTRAINT IF EXISTS fk_users;
+ALTER TABLE many_users_has_many_topics ADD CONSTRAINT fk_users FOREIGN KEY (users_id)
+REFERENCES users (id) MATCH FULL
 ON DELETE RESTRICT ON UPDATE CASCADE;
--- ddl-end --
 
--- object: fk_topics | type: CONSTRAINT --
--- ALTER TABLE public.many_users_has_many_topics DROP CONSTRAINT IF EXISTS fk_topics CASCADE;
-ALTER TABLE public.many_users_has_many_topics ADD CONSTRAINT fk_topics FOREIGN KEY (id_topics)
-REFERENCES public.topics (id) MATCH FULL
+ALTER TABLE many_users_has_many_topics DROP CONSTRAINT IF EXISTS fk_topics;
+ALTER TABLE many_users_has_many_topics ADD CONSTRAINT fk_topics FOREIGN KEY (id_topics)
+REFERENCES topics (id) MATCH FULL
 ON DELETE RESTRICT ON UPDATE CASCADE;
--- ddl-end --
 
--- object: fk_topics | type: CONSTRAINT --
--- ALTER TABLE public.news DROP CONSTRAINT IF EXISTS fk_topics CASCADE;
-ALTER TABLE public.news ADD CONSTRAINT fk_topics FOREIGN KEY (topics_id)
-REFERENCES public.topics (id) MATCH FULL
+ALTER TABLE news DROP CONSTRAINT IF EXISTS fk_topics;
+ALTER TABLE news ADD CONSTRAINT fk_topics FOREIGN KEY (topics_id)
+REFERENCES topics (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
--- ddl-end --
 
--- object: public.weather | type: TABLE --
--- DROP TABLE IF EXISTS public.weather CASCADE;
-CREATE TABLE public.weather (
+CREATE TABLE IF NOT EXISTS weather (
 	id serial NOT NULL,
 	temperature real,
 	cloudiness smallint,
@@ -118,42 +73,112 @@ CREATE TABLE public.weather (
 	"timestamp" timestamp,
 	locations_id integer,
 	CONSTRAINT weather_pk PRIMARY KEY (id)
-
 );
--- ddl-end --
-ALTER TABLE public.weather OWNER TO postgres;
--- ddl-end --
 
--- object: public.locations | type: TABLE --
--- DROP TABLE IF EXISTS public.locations CASCADE;
-CREATE TABLE public.locations (
+CREATE TABLE IF NOT EXISTS locations (
 	id serial NOT NULL,
 	location varchar(30),
 	lat real NOT NULL,
 	lon real NOT NULL,
 	CONSTRAINT locations_pk PRIMARY KEY (id)
-
 );
--- ddl-end --
-ALTER TABLE public.locations OWNER TO postgres;
--- ddl-end --
 
--- object: fk_locations | type: CONSTRAINT --
--- ALTER TABLE public.weather DROP CONSTRAINT IF EXISTS fk_locations CASCADE;
-ALTER TABLE public.weather ADD CONSTRAINT fk_locations FOREIGN KEY (locations_id)
-REFERENCES public.locations (id) MATCH FULL
+ALTER TABLE weather DROP CONSTRAINT IF EXISTS fk_locations;
+ALTER TABLE weather ADD CONSTRAINT fk_locations FOREIGN KEY (locations_id)
+REFERENCES locations (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
--- ddl-end --
 
--- object: fk_locations | type: CONSTRAINT --
--- ALTER TABLE public.users DROP CONSTRAINT IF EXISTS fk_locations CASCADE;
-ALTER TABLE public.users ADD CONSTRAINT fk_locations FOREIGN KEY (locations_id)
-REFERENCES public.locations (id) MATCH FULL
+ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_locations;
+ALTER TABLE users ADD CONSTRAINT fk_locations FOREIGN KEY (locations_id)
+REFERENCES locations (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
--- ddl-end --
 
+CREATE TABLE IF NOT EXISTS currencies (
+	id serial NOT NULL,
+	name varchar(30),
+	abbreviation varchar(3),
+	CONSTRAINT currencies_pk PRIMARY KEY (id)
+);
 
--- Appended SQL commands --
-INSERT INTO news_types (type) VALUES ('news'), ('weather'), ('currency'); 
-INSERT INTO topics (name) VALUES ('business'), ('entertainment'), ('general'), ('health'), ('science'), ('sports'), ('technology');
--- ddl-end --
+CREATE TABLE IF NOT EXISTS exchange_rates (
+	id serial NOT NULL,
+	base integer,
+	target integer,
+	rate money,
+	"timestamp" timestamp,
+	CONSTRAINT exchange_rates_pk PRIMARY KEY (id)
+);
+
+ALTER TABLE exchange_rates DROP CONSTRAINT IF EXISTS currencies_fk;
+ALTER TABLE exchange_rates ADD CONSTRAINT currencies_fk FOREIGN KEY (base)
+REFERENCES currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE exchange_rates DROP CONSTRAINT IF EXISTS currencies_fk1;
+ALTER TABLE exchange_rates ADD CONSTRAINT currencies_fk1 FOREIGN KEY (target)
+REFERENCES currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+CREATE TABLE IF NOT EXISTS users_currencies (
+	users_id integer,
+	base integer,
+	target_one integer,
+	target_two integer
+);
+
+ALTER TABLE users_currencies DROP CONSTRAINT IF EXISTS users_fk;
+ALTER TABLE users_currencies ADD CONSTRAINT users_fk FOREIGN KEY (users_id)
+REFERENCES users (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE users_currencies DROP CONSTRAINT IF EXISTS users_currencies_uq;
+ALTER TABLE users_currencies ADD CONSTRAINT users_currencies_uq UNIQUE (users_id);
+
+ALTER TABLE users_currencies DROP CONSTRAINT IF EXISTS currencies_fk;
+ALTER TABLE users_currencies ADD CONSTRAINT currencies_fk FOREIGN KEY (target_one)
+REFERENCES currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE users_currencies DROP CONSTRAINT IF EXISTS currencies_fk1;
+ALTER TABLE users_currencies ADD CONSTRAINT currencies_fk1 FOREIGN KEY (target_two)
+REFERENCES currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE users_currencies DROP CONSTRAINT IF EXISTS currencies_fk2;
+ALTER TABLE users_currencies ADD CONSTRAINT currencies_fk2 FOREIGN KEY (base)
+REFERENCES currencies (id) MATCH FULL
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+CREATE OR REPLACE VIEW aggregated_news AS
+SELECT
+    news.id,
+    news.heading,
+    news.summary,
+    news.author,
+    sources.name AS source,
+    news.link,
+    news.timestamp,
+    topics.name AS topic
+FROM news
+    JOIN topics ON news.topics_id = topics.id
+    JOIN sources ON news.sources_id = sources.id;
+
+CREATE OR REPLACE VIEW aggregated_exchange_rates AS
+SELECT
+       exchange_rates.id,
+       base_currency.abbreviation as base,
+       target_currency.abbreviation as target,
+       exchange_rates.rate,
+       exchange_rates.timestamp
+FROM exchange_rates
+    JOIN currencies AS base_currency ON exchange_rates.base = base_currency.id
+    JOIN currencies AS target_currency ON exchange_rates.target = target_currency.id;
+
+INSERT INTO topics (name) VALUES ('business'),
+                                 ('entertainment'),
+                                 ('general'),
+                                 ('health'),
+                                 ('science'),
+                                 ('sports'),
+                                 ('technology')
+ON CONFLICT DO NOTHING;
