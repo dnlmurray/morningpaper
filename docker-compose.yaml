@@ -1,0 +1,30 @@
+version: "3"
+services:
+
+  bot:
+    build: ./
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  postgres:
+    image: postgres:13
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "root"]
+      timeout: 30s
+      interval: 1m
+      retries: 3
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - type: volume
+        source: database
+        target: /var/lib/postgresql/data
+      - type: bind
+        source: ./db
+        target: /docker-entrypoint-initdb.d/
+
+volumes:
+  database:
