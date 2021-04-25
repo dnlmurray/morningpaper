@@ -4,6 +4,10 @@ import sys
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.utils import executor
+from sqlalchemy.orm import Session
+
+import database
+from User import User
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 if not BOT_TOKEN:
@@ -18,6 +22,9 @@ def init():
 
 @dispatcher.message_handler(commands='start')
 async def send_hello(message: types.message):
+    with Session(database.engine) as session:
+        session.add(User(uid=message.from_user.id))
+        session.commit()
     await message.answer("Hello! I am Morning Paper Bot. Currently under development.\n"
                          "Type /help to get more information")
 
