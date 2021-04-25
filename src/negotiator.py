@@ -34,7 +34,7 @@ def init():
 async def send_hello(message: types.message):
     with Session(database.engine) as session:
         try:
-            session.add(User(uid=message.from_user.id))
+            session.add(User(user_id=message.from_user.id))
             session.commit()
         except IntegrityError:
             await message.answer("Hey! I already know you. Use /help command to get more information")

@@ -26,6 +26,6 @@ class User:
     __sa_dataclass_metadata_key__ = 'sa'
 
     id: int = field(init=False, metadata={'sa': Column(Integer, primary_key=True)})
-    uid: int = field(default=None, metadata={'sa': Column(BigInteger)})
+    user_id: int = field(default=None, metadata={'sa': Column(BigInteger)})
     preferred_time: datetime.time = field(default=None, metadata={'sa': Column(Time)})
     locations_id: int = field(default=None, metadata={'sa': Column(Integer, ForeignKey('locations.id'))})
