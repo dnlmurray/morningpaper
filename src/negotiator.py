@@ -4,6 +4,7 @@ import sys
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.utils import executor
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 import database
@@ -23,10 +24,14 @@ def init():
 @dispatcher.message_handler(commands='start')
 async def send_hello(message: types.message):
     with Session(database.engine) as session:
-        session.add(User(uid=message.from_user.id))
-        session.commit()
-    await message.answer("Hello! I am Morning Paper Bot. Currently under development.\n"
-                         "Type /help to get more information")
+        try:
+            session.add(User(uid=message.from_user.id))
+            session.commit()
+        except IntegrityError:
+            await message.answer("Hey! I already know you. Use /help command to get more information")
+            return
+        await message.answer("Hello! I am Morning Paper Bot. Currently under development.\n"
+                             "Type /help to get more information")
 
 
 @dispatcher.message_handler(commands='help')
