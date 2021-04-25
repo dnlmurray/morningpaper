@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
 	uid bigint NOT NULL,
 	preferred_time time,
 	locations_id integer,
-	CONSTRAINT users_pk PRIMARY KEY (id)
+	CONSTRAINT users_pk PRIMARY KEY (id),
+    CONSTRAINT unique_uid UNIQUE (uid)
 );
 
 CREATE TABLE IF NOT EXISTS news (

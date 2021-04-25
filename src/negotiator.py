@@ -4,6 +4,11 @@ import sys
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.utils import executor
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+import database
+from User import User
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 if not BOT_TOKEN:
@@ -18,8 +23,15 @@ def init():
 
 @dispatcher.message_handler(commands='start')
 async def send_hello(message: types.message):
-    await message.answer("Hello! I am Morning Paper Bot. Currently under development.\n"
-                         "Type /help to get more information")
+    with Session(database.engine) as session:
+        try:
+            session.add(User(uid=message.from_user.id))
+            session.commit()
+        except IntegrityError:
+            await message.answer("Hey! I already know you. Use /help command to get more information")
+            return
+        await message.answer("Hello! I am Morning Paper Bot. Currently under development.\n"
+                             "Type /help to get more information")
 
 
 @dispatcher.message_handler(commands='help')
