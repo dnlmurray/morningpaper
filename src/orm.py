@@ -1,31 +1,48 @@
 import datetime
-from dataclasses import dataclass, field
 
-from sqlalchemy import Column, Integer, BigInteger, Time, ForeignKey, String, Float
-from sqlalchemy.orm import registry, relationship
+from sqlalchemy import Column, Integer, BigInteger, Time, ForeignKey, String, Float, Table, MetaData
+from sqlalchemy.orm import registry, relationship, declarative_base
 
 mapper_registry = registry()
 
+Base = declarative_base()
 
-@mapper_registry.mapped
-@dataclass
-class Location:
+
+class Location(Base):
     __tablename__ = 'locations'
-    __sa_dataclass_metadata_key__ = 'sa'
 
-    id: int = field(init=False, metadata={'sa': Column(Integer, primary_key=True)})
-    location: str = field(default=None, metadata={'sa': Column(String(30))})
-    lat: float = field(default=None, metadata={'sa': Column(Float)})
-    lon: float = field(default=None, metadata={'sa': Column(Float)})
+    id = Column(Integer, primary_key=True)
+    location = Column(String(30))
+    lat = Column(Float)
+    lon = Column(Float)
 
 
-@mapper_registry.mapped
-@dataclass
-class User:
+class Topic(Base):
+    __tablename__ = 'topics'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(30))
+
+    users = relationship('User', secondary='users_topics')
+
+
+class User(Base):
     __tablename__ = 'users'
-    __sa_dataclass_metadata_key__ = 'sa'
 
-    id: int = field(init=False, metadata={'sa': Column(Integer, primary_key=True)})
-    user_id: int = field(default=None, metadata={'sa': Column(BigInteger)})
-    preferred_time: datetime.time = field(default=None, metadata={'sa': Column(Time)})
-    locations_id: int = field(default=None, metadata={'sa': Column(Integer, ForeignKey('locations.id'))})
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger)
+    preferred_time = Column(Time)
+    locations_id = Column(Integer, ForeignKey('locations.id'))
+
+    topics = relationship('Topic', secondary='users_topics')
+
+
+class UsersLocations(Base):
+    __tablename__ = 'users_topics'
+
+    users_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    topics_id = Column(Integer, ForeignKey('topics.id'), primary_key=True)
+
+    user = relationship(User, backref='users_topics')
+    topic = relationship(Topic, backref='users_topics')
+
