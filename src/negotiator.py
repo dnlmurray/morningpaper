@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 import database
-from orm import User
+import orm
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 if not BOT_TOKEN:
@@ -86,7 +86,16 @@ async def set_topics(message: types.message):
 
 @dispatcher.message_handler(state=TopicSetter.process_topics)
 async def process_topics(message: types.Message, state: FSMContext):
-    await message.answer('Your current topics are:', reply_markup=topics_keyboard)
+    with Session(database.engine) as session:
+        user = session.query(orm.User).where(orm.User.user_id == message.from_user.id).first()
+        topic = session.query(orm.Topic).where(orm.Topic.name == message.text.lower()).first()
+        if topic in user.topics:
+            user.topics.remove(topic)
+        else:
+            user.topics.append(topic)
+        session.commit()
+        await message.answer('Your current topics are: ' + ', '.join(_.name for _ in user.topics),
+                             reply_markup=topics_keyboard)
 
 
 @dispatcher.message_handler(commands='currency')
