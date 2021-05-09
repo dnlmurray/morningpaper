@@ -23,8 +23,6 @@ class Topic(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(30))
 
-    users = relationship('User', secondary='users_topics')
-
 
 class User(Base):
     __tablename__ = 'users'
@@ -43,6 +41,4 @@ class UsersLocations(Base):
     users_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     topics_id = Column(Integer, ForeignKey('topics.id'), primary_key=True)
 
-    user = relationship(User, backref='users_topics')
-    topic = relationship(Topic, backref='users_topics')
 
