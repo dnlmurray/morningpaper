@@ -8,6 +8,7 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.utils import executor
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -23,7 +24,6 @@ dispatcher = Dispatcher(bot, storage=MemoryStorage())  # TODO: Consider using mo
 
 class TopicSetter(StatesGroup):
     process_topics = State()
-    apply_results = State()
 
 
 def init():
@@ -34,7 +34,7 @@ def init():
 async def send_hello(message: types.message):
     with Session(database.engine) as session:
         try:
-            session.add(User(user_id=message.from_user.id))
+            session.add(orm.User(user_id=message.from_user.id))
             session.commit()
         except IntegrityError:
             await message.answer("Hey! I already know you. Use /help command to get more information")
@@ -79,23 +79,48 @@ topics_keyboard.row(
 
 
 @dispatcher.message_handler(commands='topics')
-async def set_topics(message: types.message):
+async def set_topics(message: types.message, state: FSMContext):
+    with Session(database.engine) as session:
+        user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
+        user = session.execute(user_select).scalar()
+        users_topics = set(topic.name for topic in user.topics)
+        await state.update_data(topics=users_topics)
     await TopicSetter.process_topics.set()
-    await message.answer("Now you can edit news topics", reply_markup=topics_keyboard)
+    await message.answer('Now you can edit news topics.')
+    await message.answer('Your current topics are: ' + ', '.join(users_topics), reply_markup=topics_keyboard)
 
 
 @dispatcher.message_handler(state=TopicSetter.process_topics)
 async def process_topics(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    topics = data.get('topics')
+    user_reply = message.text.lower()
+    if user_reply == 'apply':
+        await apply_topics(message, state)
+        return
+    elif user_reply in topics:
+        topics.remove(user_reply)
+    else:
+        topics.add(user_reply)
+    await state.update_data(topics=topics)
+    await message.answer('Your current topics are: ' + ', '.join(topics), reply_markup=topics_keyboard)
+
+
+async def apply_topics(message: types.message, state: FSMContext):
+    data = await state.get_data()
+    topics = data.get('topics')
     with Session(database.engine) as session:
-        user = session.query(orm.User).where(orm.User.user_id == message.from_user.id).first()
-        topic = session.query(orm.Topic).where(orm.Topic.name == message.text.lower()).first()
-        if topic in user.topics:
-            user.topics.remove(topic)
-        else:
+        user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
+        user = session.execute(user_select).scalar()
+        topics_select = select(orm.Topic).filter(orm.Topic.name.in_(topics))
+        users_topics = session.execute(topics_select).scalars()
+        user.topics = []
+        for topic in users_topics:
             user.topics.append(topic)
         session.commit()
-        await message.answer('Your current topics are: ' + ', '.join(_.name for _ in user.topics),
-                             reply_markup=topics_keyboard)
+        await state.finish()
+        await message.answer('You have chosen the following topics: ' + ', '.join(topics),
+                             reply_markup=ReplyKeyboardRemove())
 
 
 @dispatcher.message_handler(commands='currency')
