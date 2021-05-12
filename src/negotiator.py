@@ -87,7 +87,10 @@ async def set_topics(message: types.message, state: FSMContext):
         await state.update_data(topics=users_topics)
     await TopicSetter.process_topics.set()
     await message.answer('Now you can edit news topics.')
-    await message.answer('Your current topics are: ' + ', '.join(users_topics), reply_markup=topics_keyboard)
+    if not users_topics:
+        await message.answer('You don\'t have any topics selected', reply_markup=topics_keyboard)
+    else:
+        await message.answer('Your current topics are: ' + ', '.join(users_topics), reply_markup=topics_keyboard)
 
 
 @dispatcher.message_handler(state=TopicSetter.process_topics)
@@ -103,7 +106,10 @@ async def process_topics(message: types.Message, state: FSMContext):
     else:
         topics.add(user_reply)
     await state.update_data(topics=topics)
-    await message.answer('Your current topics are: ' + ', '.join(topics), reply_markup=topics_keyboard)
+    if not topics:
+        await message.answer('You don\'t have any topics selected', reply_markup=topics_keyboard)
+    else:
+        await message.answer('Your current topics are: ' + ', '.join(topics), reply_markup=topics_keyboard)
 
 
 async def apply_topics(message: types.message, state: FSMContext):
@@ -118,7 +124,10 @@ async def apply_topics(message: types.message, state: FSMContext):
         for topic in users_topics:
             user.topics.append(topic)
         session.commit()
-        await state.finish()
+    await state.finish()
+    if not topics:
+        await message.answer('You didn\'t chose any topics', reply_markup=ReplyKeyboardRemove())
+    else:
         await message.answer('You have chosen the following topics: ' + ', '.join(topics),
                              reply_markup=ReplyKeyboardRemove())
 
