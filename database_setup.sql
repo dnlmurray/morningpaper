@@ -5,10 +5,11 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'morningpaper')\gexec
 
 CREATE TABLE IF NOT EXISTS users (
 	id serial NOT NULL,
-	uid bigint NOT NULL,
+	user_id bigint NOT NULL,
 	preferred_time time,
 	locations_id integer,
-	CONSTRAINT users_pk PRIMARY KEY (id)
+	CONSTRAINT users_pk PRIMARY KEY (id),
+    CONSTRAINT unique_uid UNIQUE (user_id)
 );
 
 CREATE TABLE IF NOT EXISTS news (
@@ -44,19 +45,19 @@ ALTER TABLE news ADD CONSTRAINT fk_sources FOREIGN KEY (sources_id)
 REFERENCES sources (id) MATCH FULL
 ON DELETE SET NULL ON UPDATE CASCADE;
 
-CREATE TABLE IF NOT EXISTS many_users_has_many_topics (
+CREATE TABLE IF NOT EXISTS users_topics (
 	users_id integer NOT NULL,
-	id_topics integer NOT NULL,
-	CONSTRAINT many_users_has_many_topics_pk PRIMARY KEY (users_id,id_topics)
+	topics_id integer NOT NULL,
+	CONSTRAINT users_topics_pk PRIMARY KEY (users_id,topics_id)
 );
 
-ALTER TABLE many_users_has_many_topics DROP CONSTRAINT IF EXISTS fk_users;
-ALTER TABLE many_users_has_many_topics ADD CONSTRAINT fk_users FOREIGN KEY (users_id)
+ALTER TABLE users_topics DROP CONSTRAINT IF EXISTS fk_users;
+ALTER TABLE users_topics ADD CONSTRAINT fk_users FOREIGN KEY (users_id)
 REFERENCES users (id) MATCH FULL
 ON DELETE RESTRICT ON UPDATE CASCADE;
 
-ALTER TABLE many_users_has_many_topics DROP CONSTRAINT IF EXISTS fk_topics;
-ALTER TABLE many_users_has_many_topics ADD CONSTRAINT fk_topics FOREIGN KEY (id_topics)
+ALTER TABLE users_topics DROP CONSTRAINT IF EXISTS fk_topics;
+ALTER TABLE users_topics ADD CONSTRAINT fk_topics FOREIGN KEY (topics_id)
 REFERENCES topics (id) MATCH FULL
 ON DELETE RESTRICT ON UPDATE CASCADE;
 
