@@ -16,7 +16,7 @@ services:
       interval: 1m
       retries: 3
     environment:
-      - POSTGRES_USER=postgres
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - type: volume
