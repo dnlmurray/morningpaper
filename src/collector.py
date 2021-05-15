@@ -1,8 +1,28 @@
 import requests
-from datetime import datetime
 
-#class Sources(list):
-#    #TODO: list of sources
+class Sources(list):
+    def __init__(self, numOfSources):
+        super().__init__()
+
+    def addSource(self, source):
+        for i in range(len(self)):
+            if (self[i] == source):
+                return
+    
+        super().append(source)
+    
+    def getStr(self):
+        outStr = self[0]
+
+        if (len(self) == 0):
+            return 
+        elif (len(self) == 1):
+            return outStr
+        else:
+            for i in range(2, len(self)):
+                outStr += ", " + self[i]
+
+            return outStr
 
 class CollectorRequest:
     def __init__(self, lastRequestTime, sources, country, language, category, sortBy="popularity"):
@@ -65,7 +85,7 @@ class Collector:
 
         if response.status_code != 200:
             raise BaseException("[ERROR]: Collector: Either server didn't respond or has resulted in zero results.")
-        
+
         try:
             content = response.json()
         except ValueError:
