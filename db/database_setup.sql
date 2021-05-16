@@ -183,3 +183,8 @@ INSERT INTO topics (name) VALUES ('business'),
                                  ('sports'),
                                  ('technology')
 ON CONFLICT DO NOTHING;
+
+INSERT INTO currencies (name, abbreviation) VALUES ('Russian Rouble', 'RUB'),
+                                                   ('US Dollar', 'USD'),
+                                                   ('Euro', 'EUR')
+ON CONFLICT DO NOTHING;
