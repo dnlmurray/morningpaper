@@ -66,3 +66,24 @@ class News(Base):
 
     sources_id = Column(Integer, ForeignKey('sources.id'))
     topics_id = Column(Integer, ForeignKey('topics.id'))
+
+
+class Currency(Base):
+    __tablename__ = 'currencies'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(30))
+    abbreviation = Column(String(3))
+
+
+class UsersCurrencies(Base):
+    __tablename__ = 'users_currencies'
+
+    users_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    base_id = Column(Integer, ForeignKey('currencies.id'), primary_key=True)
+    target_one_id = Column(Integer, ForeignKey('currencies.id'))
+    target_two_id = Column(Integer, ForeignKey('currencies.id'))
+
+    base = relationship('Currency', foreign_keys=[base_id])
+    target_one = relationship('Currency', foreign_keys=[target_one_id])
+    target_two = relationship('Currency', foreign_keys=[target_two_id])
