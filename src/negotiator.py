@@ -1,5 +1,7 @@
 import os
 import sys
+from time import strptime as parse_time
+from time import strftime as print_time
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -24,6 +26,10 @@ dispatcher = Dispatcher(bot, storage=MemoryStorage())  # TODO: Consider using mo
 
 class TopicSetter(StatesGroup):
     process_topics = State()
+
+
+class TimeSetter(StatesGroup):
+    set_time = State()
 
 
 def init():
@@ -146,8 +152,24 @@ async def set_city(message: types.message):
 
 @dispatcher.message_handler(commands='time')
 async def set_time(message: types.message):
-    await message.answer("This command will allow you to set time when you want to read news.\n"
-                         "Currently does nothing")
+    await message.answer("Please type time in 24h format (like `15:30`)", parse_mode='markdown')
+    await TimeSetter.set_time.set()
+
+
+@dispatcher.message_handler(state=TimeSetter.set_time)
+async def process_time(message: types.message, state: FSMContext):
+    try:
+        time = parse_time(message.text, '%H:%M')  # Using time module to avoid dealing with regexes
+        with Session(database.engine) as session:
+            user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
+            user = session.execute(user_select).scalar()
+            user.preferred_time = print_time('%H:%M', time)
+            session.commit()
+        await message.answer(f'You will get your news at {print_time("%H:%M", time)}')
+        await state.finish()
+    except ValueError:
+        await message.answer('Please follow format: 24h format, delimiter is colon. Don\'t use spaces!\n'
+                             'You can use /cancel command to exit time settings')
 
 
 @dispatcher.message_handler(commands='review')
