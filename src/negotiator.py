@@ -32,6 +32,12 @@ class TimeSetter(StatesGroup):
     set_time = State()
 
 
+class CurrencySetter(StatesGroup):
+    set_base = State()
+    set_target_one = State()
+    set_target_two = State()
+
+
 def init():
     executor.start_polling(dispatcher, skip_updates=True)
 
@@ -138,10 +144,22 @@ async def apply_topics(message: types.message, state: FSMContext):
                              reply_markup=ReplyKeyboardRemove())
 
 
+currency_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+currency_keyboard.row(
+    KeyboardButton('Russian Rouble (RUB)'),
+    KeyboardButton('US Dollar (USD)'),
+    KeyboardButton('Euro (EUR)')
+)
+currency_keyboard.row(
+    KeyboardButton('Cancel'),
+    KeyboardButton('Apply')
+)
+
+
 @dispatcher.message_handler(commands='currency')
 async def set_currency(message: types.message):
-    await message.answer("This command will allow you to set currencies you want to get.\n"
-                         "Currently does nothing")
+    await message.answer("Now you can set your base currency and two target currencies", reply_markup=currency_keyboard)
+    await CurrencySetter.set_base.set()
 
 
 @dispatcher.message_handler(commands='city')
