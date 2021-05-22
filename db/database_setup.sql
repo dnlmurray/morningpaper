@@ -124,7 +124,8 @@ CREATE TABLE IF NOT EXISTS users_currencies (
 	users_id integer,
 	base integer,
 	target_one integer,
-	target_two integer
+	target_two integer,
+	CONSTRAINT users_currencies_pk PRIMARY KEY (users_id, base)
 );
 
 ALTER TABLE users_currencies DROP CONSTRAINT IF EXISTS users_fk;
@@ -182,4 +183,9 @@ INSERT INTO topics (name) VALUES ('business'),
                                  ('science'),
                                  ('sports'),
                                  ('technology')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO currencies (name, abbreviation) VALUES ('Russian Rouble', 'RUB'),
+                                                   ('US Dollar', 'USD'),
+                                                   ('Euro', 'EUR')
 ON CONFLICT DO NOTHING;
