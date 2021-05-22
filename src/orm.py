@@ -80,10 +80,10 @@ class UsersCurrencies(Base):
     __tablename__ = 'users_currencies'
 
     users_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-    base_id = Column(Integer, ForeignKey('currencies.id'), primary_key=True)
-    target_one_id = Column(Integer, ForeignKey('currencies.id'))
-    target_two_id = Column(Integer, ForeignKey('currencies.id'))
+    base = Column(Integer, ForeignKey('currencies.id'), primary_key=True)
+    target_one = Column(Integer, ForeignKey('currencies.id'))
+    target_two = Column(Integer, ForeignKey('currencies.id'))
 
-    base = relationship('Currency', foreign_keys=[base_id])
-    target_one = relationship('Currency', foreign_keys=[target_one_id])
-    target_two = relationship('Currency', foreign_keys=[target_two_id])
+    base_rel = relationship('Currency', foreign_keys=[base])
+    target_one_rel = relationship('Currency', foreign_keys=[target_one])
+    target_two_rel = relationship('Currency', foreign_keys=[target_two])
