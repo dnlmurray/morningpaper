@@ -28,6 +28,10 @@ class TopicSetter(StatesGroup):
     process_topics = State()
 
 
+class LocationSetter(StatesGroup):
+    process_location = State()
+
+
 class TimeSetter(StatesGroup):
     set_time = State()
 
@@ -232,8 +236,29 @@ async def apply_currencies(message: types.message, state: FSMContext):
 
 @dispatcher.message_handler(commands='city')
 async def set_city(message: types.message):
-    await message.answer("This command will allow you to set city in which you'll get weather forecast.\n"
-                         "Currently does nothing")
+    await message.answer("What is your city?")
+    await LocationSetter.process_location.set()
+
+
+@dispatcher.message_handler(state=LocationSetter.process_location)
+async def process_location(message: types.message, state: FSMContext):
+    with Session(database.engine) as session:
+        check_location(message.text)
+        location_select = select(orm.Location).where(orm.Location.location == message.text)
+        location = session.execute(location_select).scalar()
+        user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
+        user = session.execute(user_select).scalar()
+        user.location = location
+        session.add(user)
+        session.commit()
+        await message.answer(f'Your location is {location.location}')
+
+
+def check_location(name: str):
+    with Session(database.engine) as session:
+        location = orm.Location(location=name, lat=0.0, lon=0.0)
+        session.add(location)
+        session.commit()
 
 
 @dispatcher.message_handler(commands='time')

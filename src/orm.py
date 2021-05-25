@@ -35,6 +35,7 @@ class User(Base):
     locations_id = Column(Integer, ForeignKey('locations.id'))
 
     topics = relationship('Topic', secondary='users_topics')
+    location = relationship('Location')
 
 
 class UsersLocations(Base):
