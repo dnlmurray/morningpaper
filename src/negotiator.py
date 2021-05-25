@@ -156,7 +156,6 @@ currency_keyboard.row(
     KeyboardButton('Cancel')
 )
 
-
 finish_keyboard = ReplyKeyboardMarkup(resize_keyboard=True).add('Finish')
 
 
@@ -178,7 +177,7 @@ def process_currency(message: types.message):
 
 @dispatcher.message_handler(state=CurrencySetter.set_base)
 async def set_base_currency(message: types.message, state: FSMContext):
-    currency =  process_currency(message)
+    currency = process_currency(message)
     if currency:
         await message.answer(f'Your base currency is {currency.name}')
         await message.answer('Set your first target currency')
@@ -220,7 +219,8 @@ async def apply_currencies(message: types.message, state: FSMContext):
     await message.answer(f'You will get information about price of {target_one.name} and {target_two.name} '
                          f'in {base.name}', reply_markup=ReplyKeyboardRemove())
     with Session(database.engine) as session:
-        users_currencies_select = select(orm.UsersCurrencies).join(orm.User).where(orm.User.user_id == message.from_user.id)
+        users_currencies_select = select(orm.UsersCurrencies).join(orm.User).where(
+            orm.User.user_id == message.from_user.id)
         users_currencies = session.execute(users_currencies_select).scalar()
         if users_currencies is None:
             user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
@@ -285,5 +285,18 @@ async def process_time(message: types.message, state: FSMContext):
 
 @dispatcher.message_handler(commands='review')
 async def review(message: types.message):
-    await message.answer("This command will allow you to view your current settings.\n"
-                         "Currently does nothing")
+    with Session(database.engine) as session:
+        user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
+        user = session.execute(user_select).scalar()
+        currency_select = select(orm.UsersCurrencies).where(orm.UsersCurrencies.users_id == user.id)
+        currencies = session.execute(currency_select).scalar()
+        if currencies is None:
+            # if user have not set their currencies, use dummy object for easier code
+            currencies = orm.UsersCurrencies()
+        settings = f"This are your current settings:\n" \
+                   f"Topics: {(', '.join(topic.name for topic in user.topics) if user.topics else 'None')}\n" \
+                   f"Time: {str(user.preferred_time)}\n" \
+                   f"City: {str(user.location.location)}\n" \
+                   # f"Currencies: from {str(currencies.base)} to " \
+                   # f"{str(currencies.target_one)} and {str(currencies.target_two)}"
+        await message.answer(settings)
