@@ -38,7 +38,7 @@ class User(Base):
     location = relationship('Location')
 
 
-class UsersLocations(Base):
+class UsersTopics(Base):
     __tablename__ = 'users_topics'
 
     users_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
