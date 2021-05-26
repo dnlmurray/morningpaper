@@ -293,10 +293,12 @@ async def review(message: types.message):
         if currencies is None:
             # if user have not set their currencies, use dummy object for easier code
             currencies = orm.UsersCurrencies()
+        currency_names = [session.execute(select(orm.Currency).where(orm.Currency.id == currency)).scalar().name
+                          for currency in (currencies.base, currencies.target_one, currencies.target_two)]
         settings = f"This are your current settings:\n" \
                    f"Topics: {(', '.join(topic.name for topic in user.topics) if user.topics else 'None')}\n" \
                    f"Time: {str(user.preferred_time)}\n" \
                    f"City: {str(user.location.location)}\n" \
-                   # f"Currencies: from {str(currencies.base)} to " \
-                   # f"{str(currencies.target_one)} and {str(currencies.target_two)}"
+                   f"Currencies: from {str(currency_names[0])} to " \
+                   f"{str(currency_names[1])} and {str(currency_names[2])}"
         await message.answer(settings)
