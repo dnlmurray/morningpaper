@@ -1,5 +1,7 @@
 import os
 import sys
+from time import strptime as parse_time
+from time import strftime as print_time
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -24,6 +26,21 @@ dispatcher = Dispatcher(bot, storage=MemoryStorage())  # TODO: Consider using mo
 
 class TopicSetter(StatesGroup):
     process_topics = State()
+
+
+class LocationSetter(StatesGroup):
+    process_location = State()
+
+
+class TimeSetter(StatesGroup):
+    set_time = State()
+
+
+class CurrencySetter(StatesGroup):
+    set_base = State()
+    set_target_one = State()
+    set_target_two = State()
+    review = State()
 
 
 def init():
@@ -132,25 +149,156 @@ async def apply_topics(message: types.message, state: FSMContext):
                              reply_markup=ReplyKeyboardRemove())
 
 
+currency_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+for currency in Session(database.engine).execute(select(orm.Currency)).scalars():
+    currency_keyboard.insert(KeyboardButton(f'{currency.name} ({currency.abbreviation})'))
+currency_keyboard.row(
+    KeyboardButton('Cancel')
+)
+
+finish_keyboard = ReplyKeyboardMarkup(resize_keyboard=True).add('Finish')
+
+
 @dispatcher.message_handler(commands='currency')
 async def set_currency(message: types.message):
-    await message.answer("This command will allow you to set currencies you want to get.\n"
-                         "Currently does nothing")
+    await message.answer("Now you can set your base currency and two target currencies")
+    await message.answer("Set your base currency", reply_markup=currency_keyboard)
+    await CurrencySetter.set_base.set()
+
+
+def process_currency(message: types.message):
+    for currency in Session(database.engine).execute(select(orm.Currency)).scalars():
+        if message.text.lower() == currency.name.lower() or \
+                message.text.lower() == currency.abbreviation.lower() or \
+                message.text == currency.name + f' ({currency.abbreviation})':
+            return currency
+    return None
+
+
+@dispatcher.message_handler(state=CurrencySetter.set_base)
+async def set_base_currency(message: types.message, state: FSMContext):
+    currency = process_currency(message)
+    if currency:
+        await message.answer(f'Your base currency is {currency.name}')
+        await message.answer('Set your first target currency')
+        await state.update_data(base_currency=currency)
+        await CurrencySetter.next()
+    else:
+        await message.answer("Please choose one of the available options")
+
+
+@dispatcher.message_handler(state=CurrencySetter.set_target_one)
+async def set_base_currency(message: types.message, state: FSMContext):
+    currency = process_currency(message)
+    if currency:
+        await message.answer(f'Your first target currency is {currency.name}')
+        await message.answer('Set your second target currency')
+        await state.update_data(target_one_currency=currency)
+        await CurrencySetter.next()
+    else:
+        await message.answer("Please choose one of the available options")
+
+
+@dispatcher.message_handler(state=CurrencySetter.set_target_two)
+async def set_base_currency(message: types.message, state: FSMContext):
+    currency = process_currency(message)
+    if currency:
+        await message.answer(f'Your second target currency is {currency.name}', reply_markup=finish_keyboard)
+        await state.update_data(target_two_currency=currency)
+        await CurrencySetter.next()
+    else:
+        await message.answer("Please choose one of the available options")
+
+
+@dispatcher.message_handler(state=CurrencySetter.review)
+async def apply_currencies(message: types.message, state: FSMContext):
+    data = await state.get_data()
+    base = data.get('base_currency')
+    target_one = data.get('target_one_currency')
+    target_two = data.get('target_two_currency')
+    await message.answer(f'You will get information about price of {target_one.name} and {target_two.name} '
+                         f'in {base.name}', reply_markup=ReplyKeyboardRemove())
+    with Session(database.engine) as session:
+        users_currencies_select = select(orm.UsersCurrencies).join(orm.User).where(
+            orm.User.user_id == message.from_user.id)
+        users_currencies = session.execute(users_currencies_select).scalar()
+        if users_currencies is None:
+            user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
+            user = session.execute(user_select).scalar()
+            users_currencies = orm.UsersCurrencies(users_id=user.id)
+        users_currencies.base = base.id
+        users_currencies.target_one = target_one.id
+        users_currencies.target_two = target_two.id
+        session.add(users_currencies)
+        session.commit()
+    await state.finish()
 
 
 @dispatcher.message_handler(commands='city')
 async def set_city(message: types.message):
-    await message.answer("This command will allow you to set city in which you'll get weather forecast.\n"
-                         "Currently does nothing")
+    await message.answer("What is your city?")
+    await LocationSetter.process_location.set()
+
+
+@dispatcher.message_handler(state=LocationSetter.process_location)
+async def process_location(message: types.message, state: FSMContext):
+    with Session(database.engine) as session:
+        check_location(message.text)
+        location_select = select(orm.Location).where(orm.Location.location == message.text)
+        location = session.execute(location_select).scalar()
+        user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
+        user = session.execute(user_select).scalar()
+        user.location = location
+        session.add(user)
+        session.commit()
+        await message.answer(f'Your location is {location.location}')
+
+
+def check_location(name: str):
+    with Session(database.engine) as session:
+        location = orm.Location(location=name, lat=0.0, lon=0.0)
+        session.add(location)
+        session.commit()
 
 
 @dispatcher.message_handler(commands='time')
 async def set_time(message: types.message):
-    await message.answer("This command will allow you to set time when you want to read news.\n"
-                         "Currently does nothing")
+    await message.answer("Please type time in 24h format (like `15:30`)", parse_mode='markdown')
+    await TimeSetter.set_time.set()
+
+
+@dispatcher.message_handler(state=TimeSetter.set_time)
+async def process_time(message: types.message, state: FSMContext):
+    try:
+        time = parse_time(message.text, '%H:%M')  # Using time module to avoid dealing with regexes
+        with Session(database.engine) as session:
+            user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
+            user = session.execute(user_select).scalar()
+            user.preferred_time = print_time('%H:%M', time)
+            session.commit()
+        await message.answer(f'You will get your news at {print_time("%H:%M", time)}')
+        await state.finish()
+    except ValueError:
+        await message.answer('Please follow format: 24h format, delimiter is colon. Don\'t use spaces!\n'
+                             'You can use /cancel command to exit time settings')
 
 
 @dispatcher.message_handler(commands='review')
 async def review(message: types.message):
-    await message.answer("This command will allow you to view your current settings.\n"
-                         "Currently does nothing")
+    with Session(database.engine) as session:
+        user_select = select(orm.User).where(orm.User.user_id == message.from_user.id)
+        user = session.execute(user_select).scalar()
+        currency_select = select(orm.UsersCurrencies).where(orm.UsersCurrencies.users_id == user.id)
+        currencies = session.execute(currency_select).scalar()
+        if currencies is None:
+            # if user have not set their currencies, use dummy object for easier code
+            currencies = orm.UsersCurrencies()
+        currency_names = [session.execute(select(orm.Currency).where(orm.Currency.id == currency)).scalar().name
+                          for currency in (currencies.base, currencies.target_one, currencies.target_two)]
+        settings = f"This are your current settings:\n" \
+                   f"Topics: {(', '.join(topic.name for topic in user.topics) if user.topics else 'None')}\n" \
+                   f"Time: {str(user.preferred_time)}\n" \
+                   f"City: {str(user.location.location)}\n" \
+                   f"Currencies: from {str(currency_names[0])} to " \
+                   f"{str(currency_names[1])} and {str(currency_names[2])}"
+        await message.answer(settings)
