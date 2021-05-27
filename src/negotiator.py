@@ -23,6 +23,10 @@ if not BOT_TOKEN:
 bot = Bot(BOT_TOKEN)
 dispatcher = Dispatcher(bot, storage=MemoryStorage())  # TODO: Consider using more advanced storage
 
+NEWS_TOKEN = os.getenv('NEWS_TOKEN')
+if not NEWS_TOKEN:
+    sys.exit("No NewsAPI token was found in ENV. Set 'NEWS_TOKEN' variable to your token from NewsAPI")
+
 
 class TopicSetter(StatesGroup):
     process_topics = State()
@@ -251,6 +255,7 @@ async def process_location(message: types.message, state: FSMContext):
         user.location = location
         session.add(user)
         session.commit()
+        await state.finish()
         await message.answer(f'Your location is {location.location}')
 
 
@@ -290,11 +295,10 @@ async def review(message: types.message):
         user = session.execute(user_select).scalar()
         currency_select = select(orm.UsersCurrencies).where(orm.UsersCurrencies.users_id == user.id)
         currencies = session.execute(currency_select).scalar()
-        if currencies is None:
-            # if user have not set their currencies, use dummy object for easier code
-            currencies = orm.UsersCurrencies()
-        currency_names = [session.execute(select(orm.Currency).where(orm.Currency.id == currency)).scalar().name
-                          for currency in (currencies.base, currencies.target_one, currencies.target_two)]
+        currency_names = ['None'] * 3
+        if currencies is not None:
+            currency_names = [session.execute(select(orm.Currency).where(orm.Currency.id == currency)).scalar().name
+                              for currency in (currencies.base, currencies.target_one, currencies.target_two)]
         settings = f"This are your current settings:\n" \
                    f"Topics: {(', '.join(topic.name for topic in user.topics) if user.topics else 'None')}\n" \
                    f"Time: {str(user.preferred_time)}\n" \
@@ -302,3 +306,21 @@ async def review(message: types.message):
                    f"Currencies: from {str(currency_names[0])} to " \
                    f"{str(currency_names[1])} and {str(currency_names[2])}"
         await message.answer(settings)
+
+
+@dispatcher.message_handler(commands='debug')
+async def debug(message: types.message):
+    from collector import Collector
+    from collector import CollectorRequest
+    from compiler import decomposeApiOutput
+    from datetime import date, timedelta
+
+    collector = Collector(NEWS_TOKEN)
+    yesterday = date.today() - timedelta(days=1)
+    collreq = CollectorRequest(lastRequestTime=yesterday.strftime('%y-%m-%d'), sources="the-washington-post, bbc, forbes", country="us",
+                               language="en", category="general")
+    content = collector.getTopHeadlines(collreq)
+    digest = []
+    for news in decomposeApiOutput(content)[1][:5]:
+        digest.append(f'*{news.title}*\n{news.description}\n[{news.source}]({news.url})')
+    await message.answer('\n\n'.join(digest), parse_mode='markdown')
