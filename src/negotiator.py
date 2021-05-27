@@ -313,12 +313,14 @@ async def debug(message: types.message):
     from collector import Collector
     from collector import CollectorRequest
     from compiler import decomposeApiOutput
+    from datetime import date, timedelta
 
     collector = Collector(NEWS_TOKEN)
-    collreq = CollectorRequest(lastRequestTime="2021-04-25", sources="the-washington-post, bbc, forbes", country="us",
+    yesterday = date.today() - timedelta(days=1)
+    collreq = CollectorRequest(lastRequestTime=yesterday.strftime('%y-%m-%d'), sources="the-washington-post, bbc, forbes", country="us",
                                language="en", category="general")
     content = collector.getTopHeadlines(collreq)
     digest = []
-    for news in decomposeApiOutput(content)[1][:10]:
+    for news in decomposeApiOutput(content)[1][:5]:
         digest.append(f'*{news.title}*\n{news.description}\n[{news.source}]({news.url})')
     await message.answer('\n\n'.join(digest), parse_mode='markdown')
