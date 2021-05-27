@@ -251,6 +251,7 @@ async def process_location(message: types.message, state: FSMContext):
         user.location = location
         session.add(user)
         session.commit()
+        await state.finish()
         await message.answer(f'Your location is {location.location}')
 
 
