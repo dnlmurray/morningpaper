@@ -23,6 +23,10 @@ if not BOT_TOKEN:
 bot = Bot(BOT_TOKEN)
 dispatcher = Dispatcher(bot, storage=MemoryStorage())  # TODO: Consider using more advanced storage
 
+NEWS_TOKEN = os.getenv('NEWS_TOKEN')
+if not NEWS_TOKEN:
+    sys.exit("No NewsAPI token was found in ENV. Set 'NEWS_TOKEN' variable to your token from NewsAPI")
+
 
 class TopicSetter(StatesGroup):
     process_topics = State()
