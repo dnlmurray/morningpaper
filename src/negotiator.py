@@ -295,7 +295,7 @@ async def review(message: types.message):
         user = session.execute(user_select).scalar()
         currency_select = select(orm.UsersCurrencies).where(orm.UsersCurrencies.users_id == user.id)
         currencies = session.execute(currency_select).scalar()
-        currency_names = ['None']*3
+        currency_names = ['None'] * 3
         if currencies is not None:
             currency_names = [session.execute(select(orm.Currency).where(orm.Currency.id == currency)).scalar().name
                               for currency in (currencies.base, currencies.target_one, currencies.target_two)]
@@ -306,3 +306,19 @@ async def review(message: types.message):
                    f"Currencies: from {str(currency_names[0])} to " \
                    f"{str(currency_names[1])} and {str(currency_names[2])}"
         await message.answer(settings)
+
+
+@dispatcher.message_handler(commands='debug')
+async def debug(message: types.message):
+    from collector import Collector
+    from collector import CollectorRequest
+    from compiler import decomposeApiOutput
+
+    collector = Collector(NEWS_TOKEN)
+    collreq = CollectorRequest(lastRequestTime="2021-04-25", sources="the-washington-post, bbc, forbes", country="us",
+                               language="en", category="general")
+    content = collector.getTopHeadlines(collreq)
+    digest = []
+    for news in decomposeApiOutput(content)[1][:10]:
+        digest.append(f'*{news.title}*\n{news.description}\n[{news.source}]({news.url})')
+    await message.answer('\n\n'.join(digest), parse_mode='markdown')
